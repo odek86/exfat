@@ -3,7 +3,7 @@
 #	Autoconf source.
 #
 #	Free exFAT implementation.
-#	Copyright (C) 2010-2018  Andrew Nayenko
+#	Copyright (C) 2010-2023  Andrew Nayenko
 #
 #	This program is free software; you can redistribute it and/or modify
 #	it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #
 
 AC_INIT([Free exFAT implementation],
-	[1.3.0],
+	[1.4.0],
 	[relan@users.noreply.github.com],
 	[exfat],
 	[https://github.com/relan/exfat])
@@ -37,7 +37,10 @@ PKG_CHECK_MODULES([UBLIO], [libublio], [
   AC_DEFINE([USE_UBLIO], [1],
     [Define if block devices are not supported.])
 ], [:])
-PKG_CHECK_MODULES([FUSE], [fuse])
+PKG_CHECK_MODULES([FUSE3], [fuse3],
+  [AC_DEFINE([FUSE_USE_VERSION], [30], [Required FUSE API version.])],
+  [PKG_CHECK_MODULES([FUSE2], [fuse >= 2.6],
+    [AC_DEFINE([FUSE_USE_VERSION], [26], [Required FUSE API version.])])])
 case "$host_os" in
   *-gnu)
     AC_DEFINE([_XOPEN_SOURCE], [500], [Enable pread() and pwrite().])
@@ -47,6 +50,7 @@ esac
 AC_CONFIG_HEADERS([libexfat/config.h])
 AC_CONFIG_FILES([
 	libexfat/Makefile
+	attrib/Makefile
 	dump/Makefile
 	fsck/Makefile
 	fuse/Makefile

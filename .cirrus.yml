@@ -23,31 +23,42 @@
 ---
 task:
   matrix:
-    - name: debian
+    - name: debian-fuse2
       container:
-        image: gcc:11-bullseye
+        image: gcc:12-bullseye
       install_script: |
         apt-get update
         apt-get install -y libfuse-dev
       env:
         EXTRA_CFLAGS: -fanalyzer
 
+    - name: debian-fuse3
+      container:
+        image: gcc:12-bullseye
+      install_script: |
+        apt-get update
+        apt-get install -y libfuse3-dev
+      env:
+        EXTRA_CFLAGS: -fanalyzer
+
     - name: macos
       macos_instance:
-        image: big-sur-base
+        image: ghcr.io/cirruslabs/macos-ventura-base:latest
       install_script: |
         brew update --preinstall
         brew install automake macfuse
 
     - name: freebsd
       freebsd_instance:
-        image_family: freebsd-13-0
+        image_family: freebsd-13-1
       install_script: |
         pkg install -y autoconf automake fusefs-libs libublio pkgconf
 
   compile_script: |
     autoreconf --install
-    ./configure CFLAGS="-Wall -Wextra -Werror $EXTRA_CFLAGS"
+    ./configure CFLAGS="-Wall -Wextra -Werror \
+                        -fsanitize=address,undefined \
+                        $EXTRA_CFLAGS"
     make -k
 
   test_script: |
@@ -55,3 +66,5 @@ task:
     mkfs/mkexfatfs -i 12345678 foo.img
     fsck/exfatfsck foo.img
     echo 'f1b3a11f781533f5b69086596be38367d0ebfb77  foo.img' | shasum -c
+    label/exfatlabel foo.img ￮￮￮￮￮￮￮￮￮￮￮￮￮￮￮
+    echo '4720462db953d5b2094c884f4b3098a138790533  foo.img' | shasum -c

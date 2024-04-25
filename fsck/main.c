@@ -3,7 +3,7 @@
 	exFAT file system checker.
 
 	Free exFAT implementation.
-	Copyright (C) 2011-2018  Andrew Nayenko
+	Copyright (C) 2011-2023  Andrew Nayenko
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define exfat_debug(format, ...) do {} while (0)
 
@@ -123,12 +124,17 @@ static void dirck(struct exfat* ef, const char* path)
 	free(entry_path);
 }
 
-static void fsck(struct exfat* ef, const char* spec, const char* options)
+static bool fsck(struct exfat* ef, const char* spec, const char* options)
 {
-	if (exfat_mount(ef, spec, options) != 0)
+	int rc;
+
+	rc = exfat_mount(ef, spec, options);
+	if (rc == -ENODEV)
+		return false; /* failed to open the device, checking haven't started */
+	if (rc != 0)
 	{
 		fputs("File system checking stopped. ", stdout);
-		return;
+		return true;
 	}
 
 	exfat_print_info(ef->sb, exfat_count_free_clusters(ef));
@@ -139,6 +145,7 @@ static void fsck(struct exfat* ef, const char* spec, const char* options)
 	printf("Totally %"PRIu64" directories and %"PRIu64" files.\n",
 			directories_count, files_count);
 	fputs("File system checking finished. ", stdout);
+	return true;
 }
 
 static void usage(const char* prog)
@@ -175,7 +182,7 @@ int main(int argc, char* argv[])
 			options = "repair=0,ro";
 			break;
 		case 'V':
-			puts("Copyright (C) 2011-2018  Andrew Nayenko");
+			puts("Copyright (C) 2011-2023  Andrew Nayenko");
 			return 0;
 		default:
 			usage(argv[0]);
@@ -187,7 +194,8 @@ int main(int argc, char* argv[])
 	spec = argv[optind];
 
 	printf("Checking file system on %s.\n", spec);
-	fsck(&ef, spec, options);
+	if (!fsck(&ef, spec, options))
+		return 1;
 	if (exfat_errors != 0)
 	{
 		printf("ERRORS FOUND: %d, FIXED: %d.\n",
