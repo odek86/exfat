@@ -2,9 +2,9 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ "lineage-21.0" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "lineage-21.0" ]
+    branches: [ "master" ]
 
 jobs:
   build:
