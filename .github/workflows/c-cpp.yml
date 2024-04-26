@@ -2,9 +2,9 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "lineage-21.0" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "lineage-21.0" ]
 
 jobs:
   build:
@@ -12,9 +12,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: configure
-      run: ./configure
+    - uses: actions/checkout@v4
+    - uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+    - run: ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.bp APP_PLATFORM=android-24
     - name: make
       run: make
     - name: make check
